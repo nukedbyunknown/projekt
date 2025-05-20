@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8" />
+  <title>Loja: Gjej vlerën e x</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #5d5ad4, #8359d3);
+      color: #fff;
+      text-align: center;
+      padding: 60px 20px;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 2.6rem;
+      user-select: none;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+    }
+    p, #score {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+    #equation-text {
+      font-weight: 700;
+      font-size: 2rem;
+      margin: 20px auto;
+      padding: 25px 35px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      max-width: 320px;
+      user-select: none;
+    }
+    label, select {
+      display: block;
+      font-size: 1.3rem;
+      margin: 20px auto 10px;
+      user-select: none;
+    }
+    input#user-answer {
+      font-size: 1.5rem;
+      padding: 15px 20px;
+      width: 160px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255,255,255,0.25);
+      color: white;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.25);
+      transition: background 0.3s ease;
+    }
+    input#user-answer::placeholder {
+      color: rgba(255,255,255,0.6);
+    }
+    input#user-answer:focus {
+      background: rgba(255,255,255,0.4);
+      outline: none;
+      box-shadow: 0 0 15px rgba(255,255,255,0.8);
+    }
+    button {
+      margin-top: 30px;
+      padding: 18px 40px;
+      font-size: 1.4rem;
+      border: none;
+      border-radius: 40px;
+      background: #ff6b4c;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255,107,76,0.7);
+      transition: background 0.3s ease;
+      width: 80%;
+      max-width: 480px;
+    }
+    button:hover {
+      background: #ff855f;
+    }
+    #message {
+      margin-top: 30px;
+      font-size: 1.4rem;
+      min-height: 30px;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    footer {
+      margin-top: 80px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      user-select: none;
+    }
+    select {
+      font-size: 1rem;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.25);
+      color: white;
+      box-shadow: 0 0 8px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎓 Loja: Gjej vlerën e x</h1>
+  <p>Zgjidh ekuacionin linear dhe shkruaj vlerën e saktë të <strong>x</strong></p>
+  <p id="score">Pikët: 0</p>
+
+  <label for="difficulty">🧠 Zgjidh nivelin:</label>
+  <select id="difficulty" onchange="generateNewEquation()">
+    <option value="easy">I lehtë</option>
+    <option value="medium">Mesatar</option>
+    <option value="hard">I vështirë</option>
+  </select>
+
+  <div id="equation-text">Ekuacioni: ...</div>
+
+  <label for="user-answer">✏️ Shkruaj zgjidhjen për x:</label>
+  <input type="text" id="user-answer" placeholder="p.sh. 1, 1/2" autocomplete="off" />
+
+  <button onclick="checkAnswer()">Kontrollo</button>
+
+  <div id="message"></div>
+
+  <button onclick="generateNewEquation()">🔁 Detyrë e Re</button>
+
+  <footer>
+    &copy; 2025 Loja e Ekuacioneve | Projekti i përfunduar nga Diamant Hyseni dhe Rron Gashi | Të gjitha të drejtat e rezervuara.
+  </footer>
+
+  <!-- Zëra -->
+  <audio id="correct-sound" src="https://www.soundjay.com/button/sounds/button-3.mp3" preload="auto"></audio>
+  <audio id="wrong-sound" src="https://www.soundjay.com/button/sounds/button-10.mp3" preload="auto"></audio>
+
+<script>
+  let correctX = 0;
+  let score = 0;
+
+  function gcd(a, b) {
+    if (!b) return a;
+    return gcd(b, a % b);
+  }
+
+  function toFraction(decimal, tol = 1e-6) {
+    if (Math.abs(decimal - Math.round(decimal)) < tol) {
+      return [Math.round(decimal), 1];
+    }
+    let denominator = 1;
+    while (Math.abs(decimal * denominator - Math.round(decimal * denominator)) > tol) {
+      denominator *= 10;
+    }
+    let numerator = Math.round(decimal * denominator);
+    let divisor = gcd(numerator, denominator);
+    return [numerator / divisor, denominator / divisor];
+  }
+
+  function parseInput(input) {
+    input = input.trim();
+    if (input.includes('/')) {
+      const parts = input.split('/');
+      if (parts.length === 2) {
+        const numerator = parseFloat(parts[0]);
+        const denominator = parseFloat(parts[1]);
+        if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+          return numerator / denominator;
+        }
+      }
+      return NaN;
+    } else {
+      return parseFloat(input);
+    }
+  }
+
+  function updateScore(correct) {
+    if (correct) score++;
+    else score = Math.max(0, score - 1);
+    document.getElementById("score").textContent = `Pikët: ${score}`;
+  }
+
+  function generateNewEquation() {
+    document.getElementById("message").textContent = "";
+    document.getElementById("user-answer").value = "";
+
+    const eqText = document.getElementById("equation-text");
+    const difficulty = document.getElementById("difficulty")?.value || "easy";
+
+    let a, b, xNum;
+
+    if (difficulty === "easy") {
+      xNum = Math.floor(Math.random() * 9) + 1;
+      a = Math.floor(Math.random() * 5) + 1;
+      b = Math.floor(Math.random() * 10);
+    } else if (difficulty === "medium") {
+      xNum = Math.floor(Math.random() * 15) - 5;
+      a = Math.floor(Math.random() * 10) - 5 || 1;
+      b = Math.floor(Math.random() * 20) - 10;
+    } else {
+      xNum = Math.floor(Math.random() * 20) - 10;
+      a = Math.floor(Math.random() * 20) - 10 || 1;
+      b = Math.floor(Math.random() * 30) - 15;
+    }
+
+    const c = a * xNum + b;
+    correctX = xNum;
+    eqText.textContent = `Ekuacioni: ${a}x + ${b} = ${c}`;
+  }
+
+  function checkAnswer() {
+    const userInputRaw = document.getElementById("user-answer").value;
+    const userInput = parseInput(userInputRaw);
+    const message = document.getElementById("message");
+    const correctSound = document.getElementById("correct-sound");
+    const wrongSound = document.getElementById("wrong-sound");
+
+    if (isNaN(userInput)) {
+      message.textContent = "Ju lutem shkruani një numër ose fraksion të vlefshëm!";
+      message.style.color = "#ff6b4c";
+      return;
+    }
+
+    if (Math.abs(userInput - correctX) < 1e-6) {
+      message.textContent = `🎉 Saktë! x = ${correctX}`;
+      message.style.color = "#a0f8a6";
+      correctSound.play();
+      updateScore(true);
+    } else {
+      message.textContent = "❌ Gabim. Provo përsëri!";
+      message.style.color = "#ff6b4c";
+      wrongSound.play();
+      updateScore(false);
+    }
+  }
+
+  generateNewEquation();
+</script>
+
+</body>
+</html>
